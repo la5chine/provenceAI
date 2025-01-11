@@ -97,6 +97,8 @@ async def upload_files(files: list[UploadFile]):
     Raises:
         HTTPException: If any file type is not allowed.
     """
+    if len(files) == 1 and files[0].filename == "" and files[0].size == 0:
+        raise HTTPException(status_code=400, detail="No files uploaded")
     allowed, file_extension = files_allowed(files)
     if not allowed:
         raise HTTPException(
@@ -105,6 +107,7 @@ async def upload_files(files: list[UploadFile]):
 
     upload_files = []
     for file in files:
+        print(f"Uploading file: {file.filename}")
         file_id = str(uuid.uuid4())
         file_path = UPLOAD_FOLDER / file.filename
         with file_path.open("wb") as buffer:
