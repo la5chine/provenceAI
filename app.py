@@ -49,7 +49,12 @@ files_db = FileDB()
 
 @app.post("/upload")
 async def upload_files(files: list[UploadFile]):
-    # save each file of files in UPLOAD_FOLDER and run process_file in background
+    allowed, file_extension = files_allowed(files)
+    if not allowed:
+        raise HTTPException(
+            status_code=400, detail=f"File type {file_extension} is not allowed."
+        )
+
     upload_files = []
     for file in files:
         file_id = str(uuid.uuid4())
@@ -61,6 +66,15 @@ async def upload_files(files: list[UploadFile]):
         upload_files.append(file_model.get_dict())
         files_db.append(file_model.get_dict())
     return upload_files
+
+
+def files_allowed(files: list[UploadFile]) -> tuple[bool, str | None]:
+    allowed_extensions = {".pdf", ".jpg", ".jpeg", ".png", ".gif"}
+    for file in files:
+        file_extension = Path(file.filename).suffix.lower()
+        if file_extension not in allowed_extensions:
+            return False, file_extension
+    return True, None
 
 
 @app.get("/progress/{file_id}")
