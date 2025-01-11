@@ -29,11 +29,6 @@ async def upload_files(files: list[UploadFile]):
     return files_db
 
 
-@app.get("/get_filesdb/")
-async def get_filesdb():
-    return files_db
-
-
 @app.get("/progress/{file_id}")
 async def get_progress(file_id: str):
     # Implémentez le suivi de l’avancement
