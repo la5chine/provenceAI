@@ -88,14 +88,23 @@ def files_allowed(files: list[UploadFile]) -> tuple[bool, str | None]:
 
 @app.get("/progress/{file_id}")
 async def get_progress(file_id: str):
-    # Implémentez le suivi de l’avancement
-    pass
+    file = files_db.get_file(file_id)
+    if file is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"file_id": file_id, "progress": file.progress}
 
 
 @app.get("/result/{file_id}")
 async def get_result(file_id: str):
-    # Implémentez la récupération des résultats
-    pass
+    file = files_db.get_file(file_id)
+    if file is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    if file.progress < 100:
+        raise HTTPException(status_code=400, detail="File processing not complete")
+    return {
+        "file_id": file_id,
+        "result": f"Text extracted from the file {file.filename}",
+    }
 
 
 async def process_file(file_id: str):
