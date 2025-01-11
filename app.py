@@ -79,8 +79,14 @@ async def process_file(file_id: str):
     """
     Simulates file processing in chunks and updates progress.
     """
+    print(f"Processing file {file_id}")
     total_steps = 10  # Simulating 10 steps
     for step in range(1, total_steps + 1):
-        time.sleep(1)  # Simulating time-consuming work
-        progress_db[file_id] = int((step / total_steps) * 100)
-    progress_db[file_id] = 100
+        await asyncio.sleep(2)  # Simulating time-consuming work
+        print(f"Step {step} done for file {file_id}")
+        progress = step * 100 // total_steps
+        # Update progress in files_db
+        files_db.get_file(file_id).progress = progress
+    files_db.get_file(file_id).progress = 100
+
+    return
