@@ -27,7 +27,6 @@ class FileModel(BaseModel):
     Attributes:
         file_id (str): The unique identifier of the file.
         filename (str): The path to the file.
-        size (int): The size of the file in bytes. Defaults to 0.
         progress (int): The progress of the file processing out of 100. Defaults to 0.
     Methods:
         get_dict() -> dict: Returns a dictionary representation of the file metadata.
@@ -40,11 +39,6 @@ class FileModel(BaseModel):
     filename: str = Field(
         "file path",
         description="The path to the file",
-    )
-    size: int = Field(
-        title="file size",
-        description="The size of the file in bytes",
-        default=0,
     )
     progress: int = Field(
         title="processing progress",
@@ -115,7 +109,6 @@ async def upload_files(files: list[UploadFile]):
         file_model = FileModel(
             file_id=file_id,
             filename=file.filename,
-            size=file.size,
         )
         asyncio.create_task(process_file(file_id))
         upload_files.append(file_model.get_dict())
