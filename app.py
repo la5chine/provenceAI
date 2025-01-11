@@ -52,14 +52,14 @@ async def upload_files(files: list[UploadFile]):
     # save each file of files in UPLOAD_FOLDER and run process_file in background
     upload_files = []
     for file in files:
-        file_id = uuid.uuid4()
+        file_id = str(uuid.uuid4())
         file_path = UPLOAD_FOLDER / file.filename
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        upload_files.append({"file_id": file_id, "filename": file.filename})
-        progress_db[file_id] = 0
+        file_model = FileModel(file_id=file_id, filename=file.filename)
         asyncio.create_task(process_file(file_id))
-    files_db.extend(upload_files)
+        upload_files.append(file_model.get_dict())
+        files_db.append(file_model.get_dict())
     return upload_files
 
 
