@@ -21,6 +21,11 @@ class FileModel(BaseModel):
         "file path",
         description="The path to the file",
     )
+    size: int = Field(
+        title="file size",
+        description="The size of the file in bytes",
+        default=0,
+    )
     progress: int = Field(
         title="processing progress",
         description="The progress of the file processing out of 100",
@@ -61,7 +66,11 @@ async def upload_files(files: list[UploadFile]):
         file_path = UPLOAD_FOLDER / file.filename
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        file_model = FileModel(file_id=file_id, filename=file.filename)
+        file_model = FileModel(
+            file_id=file_id,
+            filename=file.filename,
+            size=file.size,
+        )
         asyncio.create_task(process_file(file_id))
         upload_files.append(file_model.get_dict())
         files_db.append(file_model.get_dict())
