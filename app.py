@@ -17,16 +17,18 @@ progress_db = {}
 
 @app.post("/upload")
 async def upload_files(files: list[UploadFile]):
-    # save each file of files in the files_db forlder
+    # save each file of files in UPLOAD_FOLDER and run process_file in background
+    upload_files = []
     for file in files:
         file_id = uuid.uuid4()
         file_path = UPLOAD_FOLDER / file.filename
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        files_db.append({"file_id": file_id, "filename": file.filename})
+        upload_files.append({"file_id": file_id, "filename": file.filename})
         progress_db[file_id] = 0
         asyncio.create_task(process_file(file_id))
-    return files_db
+    files_db.extend(upload_files)
+    return upload_files
 
 
 @app.get("/progress/{file_id}")
