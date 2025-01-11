@@ -3,3 +3,5 @@ pydantic
 asyncio
 uvicorn
 python-multipart
+pytest
+httpx
