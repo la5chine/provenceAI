@@ -1,3 +1,4 @@
+import time
 from fastapi import FastAPI, File, UploadFile, HTTPException
 import shutil
 from pathlib import Path
@@ -46,6 +47,11 @@ async def get_result(file_id: str):
 
 
 async def process_file(file_id: str):
-    # Implémentez une tâche asynchrone simulant le traitement d’un fichier
-    print(f"Processing file {file_id}")
-    pass
+    """
+    Simulates file processing in chunks and updates progress.
+    """
+    total_steps = 10  # Simulating 10 steps
+    for step in range(1, total_steps + 1):
+        time.sleep(1)  # Simulating time-consuming work
+        progress_db[file_id] = int((step / total_steps) * 100)
+    progress_db[file_id] = 100
