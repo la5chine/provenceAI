@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 from fastapi import FastAPI, UploadFile, HTTPException
 import shutil
@@ -6,15 +7,18 @@ from pydantic import BaseModel, Field
 import uuid
 import asyncio
 
-app = FastAPI()
+DEBUG = os.getenv("DEBUG", False)
 
-UPLOAD_FOLDER = Path("uploaded_files")
+
+app = FastAPI(debug=DEBUG)
+
+UPLOAD_FOLDER = Path(os.getenv("UPLOAD_FOLDER", "uploaded_files"))
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png", ".gif"}
 
-TOTAL_STEPS = 10
-DELAY = 2
+TOTAL_STEPS = int(os.getenv("TOTAL_STEPS", 10))
+DELAY = int(os.getenv("DELAY", 2))
 
 
 class FileModel(BaseModel):
