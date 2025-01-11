@@ -1,18 +1,50 @@
-import time
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from typing import Dict
+from fastapi import FastAPI, UploadFile, HTTPException
 import shutil
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import uuid
 import asyncio
 
-app = FastAPI(debug=True)
+app = FastAPI()
 
 UPLOAD_FOLDER = Path("uploaded_files")
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
-files_db = []
-progress_db = {}
+
+class FileModel(BaseModel):
+    file_id: str = Field(
+        title="file identifier",
+        description="The unique identifier of the file",
+    )
+    filename: str = Field(
+        "file path",
+        description="The path to the file",
+    )
+    progress: int = Field(
+        title="processing progress",
+        description="The progress of the file processing out of 100",
+        default=0,
+    )
+
+    def get_dict(self) -> dict:
+        return {
+            "file_id": self.file_id,
+            "filename": self.filename,
+        }
+
+
+class FileDB(BaseModel):
+    items: Dict[str, FileModel] = {}
+
+    def append(self, file: dict):
+        self.items[file["file_id"]] = FileModel(**file)
+
+    def get_file(self, file_id: str) -> FileModel | None:
+        return self.items.get(file_id, None)
+
+
+files_db = FileDB()
 
 
 @app.post("/upload")
