@@ -32,7 +32,7 @@ This project is a FastAPI application for uploading and processing files. It inc
 
 
 5. **Set up environment variables:**
-Create a .env file in the root directory and add the following variables, these are the default value, you may want to change them for your usecase:
+Create a .env file in the root directory and add the following variables (these are the default value, so you can skip this step and not create a .env file, it'd still work fine but if you want to change them for your usecase, here they are):
     ```
     DEBUG=True
     UPLOAD_FOLDER=uploaded_files
