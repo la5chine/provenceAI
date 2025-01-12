@@ -14,24 +14,21 @@ This project is a FastAPI application for uploading and processing files. It inc
    ```sh
    git clone https://github.com/la5chine/provenceAI.git
    cd provenceAI
-   ´´´
+
 
 2. **Clone the repository:**
     ```
     python -m venv .venv
-    ´´´
 
 
 3. **Activate the virtual environment:**
     ```
     .venv\Scripts\activate
-    ´´´
 
 
 4. **Install the dependencies:**
     ```
     pip install -r requirements.txt
-    ´´´
 
 
 5. **Set up environment variables:**#
@@ -41,18 +38,15 @@ Create a .env file in the root directory and add the following variables:
     UPLOAD_FOLDER=uploaded_files
     TOTAL_STEPS=10
     DELAY=2
-    ´´´
 
 
 6. **Run the application:**
     ```
     uvicorn app:app --reload
-    ´´´
 
-**Running Tests**
+7. **Running Tests**
     ```
     pytest
-    ´´´
 
 **Endpoints**
 - POST /upload: Upload files
