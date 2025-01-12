@@ -1,35 +1,29 @@
 import os
 import sys
-import pytest
 from fastapi.testclient import TestClient
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from app import app, files_db, FileModel
+from app import app, FileModel
 
 client = TestClient(app)
 
 
-@pytest.fixture
-def setup_files_db():
-    # Setup: Add a file to the database
-    file_id = "test-file-id"
-    file_model = FileModel(file_id=file_id, filename="testfile.pdf")
-    files_db.append(file_model.get_dict())
-    file_model = files_db.get_file(file_id)
-    file_model.progress = 50
-    yield file_id
-    # Teardown: Clear the database
-    files_db.items.clear()
+def test_get_progress_success(mocker):
+    file_id = "test_file_id"
+    mock_file = FileModel(file_id=file_id, filename="test_file", progress=50)
+    mocker.patch("app.get_from_redis", return_value=mock_file)
 
-
-def test_get_progress_success(setup_files_db):
-    file_id = setup_files_db
     response = client.get(f"/progress/{file_id}")
-    assert response.status_code == 200
+
     assert response.json() == {"file_id": file_id, "progress": 50}
+    assert response.status_code == 200
+
+def test_get_progress_file_not_found(mocker):
+    file_id = "non_existent_file_id"
+    mocker.patch("app.get_from_redis", return_value=None)
 
 
-def test_get_progress_file_not_found():
-    response = client.get("/progress/nonexistent-file-id")
+    response = client.get(f"/progress/{file_id}")
+
     assert response.status_code == 404
     assert response.json() == {"detail": "File not found"}
