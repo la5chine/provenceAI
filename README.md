@@ -31,20 +31,31 @@ This project is a FastAPI application for uploading and processing files. It inc
     pip install -r requirements.txt
 
 
-5. **Set up environment variables:**#
-Create a .env file in the root directory and add the following variables:
+5. **Set up environment variables:**
+Create a .env file in the root directory and add the following variables, these are the default value, you may want to change them for your usecase:
     ```
     DEBUG=True
     UPLOAD_FOLDER=uploaded_files
     TOTAL_STEPS=10
     DELAY=2
+    MONGO_URI="mongodb://admin:rootroot@localhost:27017"
+    MONGO_DB_NAME="files_db"
 
+6. **Run Redis:**
+Install Redis and run the following command:
+    ```
+    sudo service redis-server start
 
-6. **Run the application:**
+7. **Run Mongos DB:**
+Install Mongos and run the following command, you may want to update the username and/or password if you have changed them in the .env file from the default values:
+    ```
+    docker run -d --name mongodb -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=rootroot mongo
+
+8. **Run the application:**
     ```
     uvicorn app:app --reload
 
-7. **Running Tests**
+9. **Running Tests**
     ```
     pytest
 
