@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 import uuid
 import asyncio
 
+from redis import StrictRedis
+
 DEBUG = os.getenv("DEBUG", False)
 
 
@@ -19,6 +21,10 @@ ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png", ".gif"}
 
 TOTAL_STEPS = int(os.getenv("TOTAL_STEPS", 10))
 DELAY = int(os.getenv("DELAY", 2))
+
+
+redis_client = StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+
 
 
 class FileModel(BaseModel):
@@ -52,6 +58,18 @@ class FileModel(BaseModel):
             "filename": self.filename,
         }
 
+
+
+def add_to_redis(file_id, file: FileModel):
+    redis_client.hmset(file_id, file.model_dump())
+
+def get_from_redis(file_id) -> FileModel:
+    return FileModel(**redis_client.hgetall(file_id))
+
+def set_progress(file_id, progress):
+    file = get_from_redis(file_id)
+    file.progress = progress
+    add_to_redis(file_id, file)
 
 class FileDB(BaseModel):
     """
@@ -112,7 +130,7 @@ async def upload_files(files: list[UploadFile]):
         )
         asyncio.create_task(process_file(file_id))
         upload_files.append(file_model.get_dict())
-        files_db.append(file_model.get_dict())
+        add_to_redis(file_id, file_model)
     return upload_files
 
 
@@ -149,7 +167,7 @@ async def get_progress(file_id: str):
     Raises:
         HTTPException: If the file with the given ID is not found.
     """
-    file = files_db.get_file(file_id)
+    file = get_from_redis(file_id)
     if file is None:
         raise HTTPException(status_code=404, detail="File not found")
     return {"file_id": file_id, "progress": file.progress}
@@ -170,7 +188,7 @@ async def get_result(file_id: str):
         HTTPException: If the file is not found (status code 404).
         HTTPException: If the file processing is not complete (status code 400).
     """
-    file = files_db.get_file(file_id)
+    file = get_from_redis(file_id)
     if file is None:
         raise HTTPException(status_code=404, detail="File not found")
     if file.progress < 100:
@@ -196,7 +214,7 @@ async def process_file(file_id: str):
         await asyncio.sleep(DELAY)  # Simulating time-consuming work
         print(f"Step {step} done for file {file_id}")
         progress = step * 100 // TOTAL_STEPS
-        files_db.get_file(file_id).progress = progress
-    files_db.get_file(file_id).progress = 100
+        set_progress(file_id, progress)
+    set_progress(file_id, 100)
     print(f"Processing complete for file {file_id}")
     return
