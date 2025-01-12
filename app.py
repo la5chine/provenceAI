@@ -1,12 +1,11 @@
 import os
-from typing import Dict
 from fastapi import FastAPI, UploadFile, HTTPException
-import shutil
 from pathlib import Path
+import gridfs
 from pydantic import BaseModel, Field
-import uuid
 import asyncio
 
+from pymongo import MongoClient
 from redis import StrictRedis
 
 DEBUG = os.getenv("DEBUG", False)
@@ -14,17 +13,23 @@ DEBUG = os.getenv("DEBUG", False)
 
 app = FastAPI(debug=DEBUG)
 
-UPLOAD_FOLDER = Path(os.getenv("UPLOAD_FOLDER", "uploaded_files"))
-UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:rootroot@localhost:27017")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "files_db")
+
+# set up the connection to the MongoDB server
+client = MongoClient(MONGO_URI)
+db = client[MONGO_DB_NAME]
+grid_fs = gridfs.GridFS(db)
+
 
 ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png", ".gif"}
 
-TOTAL_STEPS = int(os.getenv("TOTAL_STEPS", 10))
+TOTAL_STEPS = int(os.getenv("TOTAL_STEPS", 20))
 DELAY = int(os.getenv("DELAY", 2))
 
 
 redis_client = StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
-
 
 
 class FileModel(BaseModel):
@@ -71,32 +76,6 @@ def set_progress(file_id, progress):
     file.progress = progress
     add_to_redis(file_id, file)
 
-class FileDB(BaseModel):
-    """
-    A class to represent a file database.
-    Attributes:
-    -----------
-    items : Dict[str, FileModel]
-        A dictionary to store file models with their file IDs as keys.
-    Methods:
-    --------
-    append(file: dict):
-        Adds a new file to the database.
-    get_file(file_id: str) -> FileModel | None:
-        Retrieves a file from the database by its file ID.
-    """
-
-    items: Dict[str, FileModel] = {}
-
-    def append(self, file: dict):
-        self.items[file["file_id"]] = FileModel(**file)
-
-    def get_file(self, file_id: str) -> FileModel | None:
-        return self.items.get(file_id, None)
-
-
-files_db = FileDB()
-
 
 @app.post("/upload")
 async def upload_files(files: list[UploadFile]):
@@ -119,11 +98,9 @@ async def upload_files(files: list[UploadFile]):
 
     upload_files = []
     for file in files:
-        print(f"Uploading file: {file.filename}")
-        file_id = str(uuid.uuid4())
-        file_path = UPLOAD_FOLDER / file.filename
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        print(f"Uploading file: {file.filename=}")
+        file_id = str(grid_fs.put(file.file, filename=file.filename, content_type=file.content_type, size=file.size))
+        print(f"File uploaded to mongosdb: {file_id=}")
         file_model = FileModel(
             file_id=file_id,
             filename=file.filename,
