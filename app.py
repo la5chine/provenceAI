@@ -9,13 +9,18 @@ from pymongo import MongoClient
 from redis import StrictRedis
 
 DEBUG = os.getenv("DEBUG", False)
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:rootroot@mongodb:27017")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "files_db")
+
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+
+TOTAL_STEPS = int(os.getenv("TOTAL_STEPS", 20))
+DELAY = int(os.getenv("DELAY", 2))
 
 
 app = FastAPI(debug=DEBUG)
 
-
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:rootroot@localhost:27017")
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "files_db")
 
 # set up the connection to the MongoDB server
 client = MongoClient(MONGO_URI)
@@ -25,11 +30,8 @@ grid_fs = gridfs.GridFS(db)
 
 ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png", ".gif"}
 
-TOTAL_STEPS = int(os.getenv("TOTAL_STEPS", 20))
-DELAY = int(os.getenv("DELAY", 2))
 
-
-redis_client = StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_client = StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
 
 
 class FileModel(BaseModel):
@@ -69,7 +71,10 @@ def add_to_redis(file_id, file: FileModel):
     redis_client.hmset(file_id, file.model_dump())
 
 def get_from_redis(file_id) -> FileModel:
-    return FileModel(**redis_client.hgetall(file_id))
+    file_kwargs = redis_client.hgetall(file_id)
+    if not file_kwargs:
+        return None
+    return FileModel(**file_kwargs)
 
 def set_progress(file_id, progress):
     file = get_from_redis(file_id)

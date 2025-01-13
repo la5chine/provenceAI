@@ -59,6 +59,11 @@ Install Mongos and run the following command, you may want to update the usernam
     ```
     pytest
 
+10. **Dockerize the APP**
+    ```
+    docker-compose up --build
+
+
 **Endpoints**
 - POST /upload: Upload files
 - GET /progress/{file_id}: Get the processing progress of a file
