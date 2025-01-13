@@ -69,7 +69,10 @@ def add_to_redis(file_id, file: FileModel):
     redis_client.hmset(file_id, file.model_dump())
 
 def get_from_redis(file_id) -> FileModel:
-    return FileModel(**redis_client.hgetall(file_id))
+    file_kwargs = redis_client.hgetall(file_id)
+    if not file_kwargs:
+        return None
+    return FileModel(**file_kwargs)
 
 def set_progress(file_id, progress):
     file = get_from_redis(file_id)
